@@ -24,8 +24,7 @@
   </head>
   <body style="margin: 0; overflow: hidden">
     <button id="start-button">點擊啟動 WebAR</button>
-    <button id="play-button" style="display: none">點擊播放影片</button>
-
+    <button id="play-button">點擊播放影片</button>
     <!-- WebAR 場景 -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
       <a-video
@@ -41,6 +40,7 @@
         preload="auto"
       >
       </a-video>
+
       <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
 
@@ -59,8 +59,9 @@
         .getElementById("play-button")
         .addEventListener("click", function () {
           let video = document.getElementById("ar-video");
+          video.muted = false; // 解除靜音
           video.play();
-          this.style.display = "none"; // 隱藏播放按鈕
+          this.style.display = "none"; // 隱藏按鈕
         });
 
       function enableGPS() {
