@@ -1,106 +1,113 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>WebAR 建築物前播放影片</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@1.7.2/aframe/build/aframe-ar.min.js"></script>
     <style>
-        #start-button, #play-button {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 1000;
-        }
+      #start-button,
+      #play-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 15px 30px;
+        font-size: 18px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1000;
+      }
     </style>
-</head>
-<body style="margin: 0; overflow: hidden;">
+  </head>
+  <body style="margin: 0; overflow: hidden">
     <button id="start-button">點擊啟動 WebAR</button>
-    <button id="play-button" style="display:none;">點擊播放影片</button>
+    <button id="play-button" style="display: none">點擊播放影片</button>
 
     <!-- WebAR 場景 -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-        <a-video
-            id="ar-video"
-            src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
-            position="0 2 -5"
-            width="3"
-            height="1.5"
-            autoplay
-            loop
-            playsinline
-            muted>
-        </a-video>
-        <a-camera gps-camera rotation-reader></a-camera>
+      <a-video
+        id="ar-video"
+        src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
+        position="0 2 -5"
+        width="3"
+        height="1.5"
+        autoplay
+        loop
+        playsinline
+        muted
+        preload="auto"
+      >
+      </a-video>
+      <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
 
     <script>
-        let isGPSSet = false;
+      let isGPSSet = false;
 
-        document.getElementById("start-button").addEventListener("click", function () {
-            enableGPS();
-            document.getElementById("start-button").style.display = "none";
-            document.getElementById("play-button").style.display = "block"; // 顯示播放按鈕
+      document
+        .getElementById("start-button")
+        .addEventListener("click", function () {
+          enableGPS();
+          document.getElementById("start-button").style.display = "none";
+          document.getElementById("play-button").style.display = "block"; // 顯示播放按鈕
         });
 
-        document.getElementById("play-button").addEventListener("click", function() {
-            let video = document.getElementById("ar-video");
-            video.play();
-            this.style.display = "none"; // 隱藏播放按鈕
+      document
+        .getElementById("play-button")
+        .addEventListener("click", function () {
+          let video = document.getElementById("ar-video");
+          video.play();
+          this.style.display = "none"; // 隱藏播放按鈕
         });
 
-        function enableGPS() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    function (position) {
-                        if (!isGPSSet) {
-                            let userLat = position.coords.latitude;
-                            let userLng = position.coords.longitude;
+      function enableGPS() {
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            function (position) {
+              if (!isGPSSet) {
+                let userLat = position.coords.latitude;
+                let userLng = position.coords.longitude;
 
-                            console.log("📍 GPS 讀取成功:", userLat, userLng);
+                console.log("📍 GPS 讀取成功:", userLat, userLng);
 
-                            let arVideo = document.getElementById("ar-video");
-                            arVideo.setAttribute(
-                                "gps-entity-place",
-                                `latitude: ${userLat}; longitude: ${userLng}`
-                            );
-
-                            isGPSSet = true;
-                        }
-                    },
-                    function (error) {
-                        console.error("⚠️ GPS 無法啟用", error);
-                        alert("請允許 GPS 存取以顯示 WebAR 影片！");
-                    },
-                    { enableHighAccuracy: true, maximumAge: 30000, timeout: 5000 }
+                let arVideo = document.getElementById("ar-video");
+                arVideo.setAttribute(
+                  "gps-entity-place",
+                  `latitude: ${userLat}; longitude: ${userLng}`
                 );
-            } else {
-                alert("您的裝置不支援 GPS");
-            }
-        }
 
-        function checkAR() {
-            let arVideo = document.getElementById("ar-video");
-            if (arVideo) {
-                console.log("✅ WebAR 影片已載入");
-            } else {
-                console.error("❌ WebAR 影片未顯示");
-            }
+                isGPSSet = true;
+              }
+            },
+            function (error) {
+              console.error("⚠️ GPS 無法啟用", error);
+              alert("請允許 GPS 存取以顯示 WebAR 影片！");
+            },
+            { enableHighAccuracy: true, maximumAge: 30000, timeout: 5000 }
+          );
+        } else {
+          alert("您的裝置不支援 GPS");
         }
+      }
 
-        window.onload = function () {
-            checkAR();
-            setTimeout(() => {
-                enableGPS();
-            }, 3000);
-        };
+      function checkAR() {
+        let arVideo = document.getElementById("ar-video");
+        if (arVideo) {
+          console.log("✅ WebAR 影片已載入");
+        } else {
+          console.error("❌ WebAR 影片未顯示");
+        }
+      }
+
+      window.onload = function () {
+        checkAR();
+        setTimeout(() => {
+          enableGPS();
+        }, 3000);
+      };
     </script>
-</body>
+  </body>
 </html>
