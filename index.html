@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebAR 建築物前播放影片（GPS 確定後才開啟）</title>
+    <title>WebAR 影片 GPS 定位顯示</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@1.7.2/aframe/build/aframe-ar.min.js"></script>
-    <script src="https://rawgit.com/nicolocarpignoli/AR.js/master/aframe/build/aframe-gps-camera.min.js"></script> <!-- ✅ 確保 GPS 正確解析 -->
-    
+
     <style>
+        /* 黑色啟動畫面 */
         #black-screen {
             position: fixed;
             width: 100%;
@@ -20,6 +20,21 @@
             z-index: 1000;
         }
 
+        /* GPS 位置提示 */
+        #gps-guide {
+            position: fixed;
+            width: 100%;
+            text-align: center;
+            top: 20%;
+            font-size: 18px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            display: none;
+            z-index: 999;
+        }
+
+        /* 播放影片按鈕 */
         #play-button {
             position: absolute;
             top: 50%;
@@ -36,6 +51,7 @@
             display: none;
         }
 
+        /* 隱藏 WebAR 場景直到 GPS 定位成功 */
         #ar-container {
             display: none;
         }
@@ -43,25 +59,32 @@
 </head>
 <body style="margin: 0; overflow: hidden;">
 
-    <div id="black-screen">正在定位中...</div>
+    <!-- 黑色啟動畫面 -->
+    <div id="black-screen">正在啟動 WebAR...</div>
 
-    <button id="play-button">點擊播放影片</button>
+    <!-- GPS 位置引導 -->
+    <div id="gps-guide">請移動手機，等待 GPS 定位...</div>
 
+    <!-- 播放影片按鈕 -->
+    <button id="play-button">播放影片</button>
+
+    <!-- WebAR 容器 -->
     <div id="ar-container">
-        <a-scene embedded arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false;">
+        <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
             <a-video
                 id="ar-video"
                 src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
-                gps-entity-place="latitude: 24.9698357728235; longitude: 121.26002968977252"
-                position="0 3 -5"
-                width="6"
-                height="3.5"
+                gps-entity-place="latitude: 0; longitude: 0"  <!-- 初始值，避免錯誤 -->
+                position="0 2 -5"  <!-- 影片顯示在 GPS 位置，但離使用者 2m 高 -->
+                width="4"
+                height="2.25"
                 loop
                 playsinline
                 muted
                 preload="auto"
-                crossOrigin="anonymous"
-                visible="false">
+                visible="false"
+                look-at="[gps-camera]"
+                material="opacity: 0.8;">  <!-- 設定透明度 80% -->
             </a-video>
             <a-camera gps-camera rotation-reader></a-camera>
         </a-scene>
@@ -72,6 +95,8 @@
 
         function enableGPS() {
             if ("geolocation" in navigator) {
+                document.getElementById("gps-guide").style.display = "block"; // 顯示 GPS 提示
+
                 navigator.geolocation.getCurrentPosition(
                     function (position) {
                         if (!isGPSSet) {
@@ -82,6 +107,7 @@
 
                             let arVideo = document.getElementById("ar-video");
 
+                            // **確保 GPS 設定正確**
                             setTimeout(() => {
                                 arVideo.setAttribute(
                                     "gps-entity-place",
@@ -90,19 +116,19 @@
                                 arVideo.setAttribute("visible", "true"); // 顯示影片
                                 console.log("🎥 影片應該已顯示");
 
-                                // 手動更新 A-Frame 貼圖，確保影片顯示
-                                arVideo.addEventListener("loadeddata", () => {
-                                    arVideo.components.material.material.needsUpdate = true;
-                                    console.log("🔄 影片材質更新");
-                                });
+                                // 移除 GPS 提示
+                                document.getElementById("gps-guide").style.display = "none";
+                                
+                                // 顯示播放按鈕
+                                document.getElementById("play-button").style.display = "block";
 
-                            }, 2000);
+                            }, 3000); // 延遲 3 秒，確保 GPS 位置穩定
 
+                            // 移除黑色遮罩
                             document.getElementById("black-screen").style.display = "none";
                             document.getElementById("ar-container").style.display = "block";
-                            document.getElementById("play-button").style.display = "block";
 
-                            isGPSSet = true;  
+                            isGPSSet = true;  // 確保不會重複設定 GPS
                         }
                     },
                     function (error) {
@@ -122,23 +148,22 @@
             video.setAttribute("visible", "true"); // 確保影片顯示
 
             setTimeout(() => {
-                if (video.play) {
-                    let playPromise = video.play();
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            console.log("🎥 影片播放成功");
-                        }).catch(error => {
-                            console.log("❌ 影片無法播放:", error);
-                        });
-                    } else {
-                        console.log("⚠️ `video.play` 方法不存在，影片可能未載入");
-                    }
+                let playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log("🎥 影片播放成功");
+                    }).catch(error => {
+                        console.log("❌ 影片無法播放:", error);
+                    });
+                } else {
+                    console.log("⚠️ `video.play()` 方法不存在，影片可能未載入");
                 }
             }, 500);
 
-            this.style.display = "none"; // **隱藏按鈕**
+            this.style.display = "none"; // 隱藏按鈕
         });
 
+        // 啟動 GPS 定位
         window.onload = function () {
             enableGPS();
         };
