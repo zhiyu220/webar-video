@@ -3,11 +3,19 @@
   <head>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://rawgit.com/nicolocarpignoli/AR.js/master/aframe/build/aframe-ar.min.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA8tIJYmXx7fxn6ulAg-SMMC86oGgvSHFg"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
     <style>
       #map {
         height: 400px;
         width: 100%;
+      }
+      #yt-video {
+        display: block; /* 預設顯示影片 */
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
       }
     </style>
   </head>
@@ -15,34 +23,27 @@
     <!-- 顯示 Google 地圖 -->
     <div id="map"></div>
 
+    <!-- YouTube 影片預設開啟 -->
+    <div id="yt-video">
+      <iframe
+        width="560"
+        height="315"
+        src="https://www.youtube.com/embed/MfUM6UZlHqM?autoplay=1"
+        frameborder="0"
+        allowfullscreen
+      >
+      </iframe>
+    </div>
+
+    <!-- WebAR 場景 -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-      <!-- 在特定建築物前顯示 AR 影片 -->
       <a-entity
         gps-entity-place="latitude: 24.969812026015507; longitude: 121.26015417116461"
         look-at="[gps-camera]"
         position="0 1.5 0"
       >
-        <a-plane width="3" height="1.5" color="black">
-          <a-entity
-            geometry="primitive: plane; width: 3; height: 1.5"
-            material="shader: html; target: #yt-video"
-          >
-          </a-entity>
-        </a-plane>
+        <a-plane width="3" height="1.5" color="black"></a-plane>
       </a-entity>
-
-      <div id="yt-video" style="display: none">
-        <iframe
-          width="560"
-          height="315"
-          src="https://www.youtube.com/embed/MfUM6UZlHqM"
-          frameborder="0"
-          allowfullscreen
-        >
-        </iframe>
-      </div>
-
-      <!-- GPS 相機 -->
       <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
 
@@ -59,6 +60,26 @@
         });
       }
       window.onload = initMap;
+
+      // 確保 GPS 位置自動啟用
+      function enableGPS() {
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            function (position) {
+              console.log("GPS 啟動成功:", position.coords.latitude, position.coords.longitude);
+            },
+            function (error) {
+              console.error("GPS 無法啟用", error);
+              alert("請允許 GPS 位置存取以顯示 AR 內容");
+            }
+          );
+        } else {
+          alert("您的裝置不支援 GPS");
+        }
+      }
+
+      // 自動啟用 GPS
+      setTimeout(enableGPS, 2000);
     </script>
   </body>
 </html>
