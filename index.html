@@ -15,7 +15,6 @@
     </style>
   </head>
   <body style="margin: 0; overflow: hidden">
-
     <!-- WebAR 場景 -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
       <a-video
@@ -32,6 +31,14 @@
     </a-scene>
 
     <script>
+      document.body.addEventListener(
+        "click",
+        function () {
+          enableGPS();
+        },
+        { once: true }
+      ); // 只允許點擊一次
+
       async function checkCameraPermission() {
         try {
           const permissionStatus = await navigator.permissions.query({
@@ -69,7 +76,7 @@
         checkCameraPermission();
       };
       function initMap() {
-        var location = { lat: 24.96983638069933, lng: 121.26003438363799 };
+        var location = { lat: 24.969812026015507, lng: 121.26015417116461 };
         var map = new google.maps.Map(document.getElementById("map"), {
           zoom: 18,
           center: location,
