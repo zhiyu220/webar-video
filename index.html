@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebAR 影片 GPS 定位顯示</title>
+    <title>WebAR 解謎遊戲（GPS 到達後可播放）</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@1.7.2/aframe/build/aframe-ar.min.js"></script>
+
+    <link rel="icon" href="data:,"> <!-- 避免 favicon.ico 錯誤 -->
 
     <style>
         /* 黑色啟動畫面 */
@@ -63,7 +65,7 @@
     <div id="black-screen">正在啟動 WebAR...</div>
 
     <!-- GPS 位置引導 -->
-    <div id="gps-guide">請移動手機，等待 GPS 定位...</div>
+    <div id="gps-guide">請移動手機，前往指定地點...</div>
 
     <!-- 播放影片按鈕 -->
     <button id="play-button">播放影片</button>
@@ -74,62 +76,63 @@
             <a-video
                 id="ar-video"
                 src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
-                gps-entity-place="latitude: 0; longitude: 0"  
-                position="0 2 -5"  
+                gps-entity-place="latitude: 24.969843; longitude: 121.260031"
+                position="0 2 -5"
                 width="4"
                 height="2.25"
-                loop
                 playsinline
                 muted
                 preload="auto"
+                crossOrigin="anonymous"
                 visible="false"
                 look-at="[gps-camera]"
-                material="opacity: 0.8;">  <!-- 設定透明度 80% -->
+                material="opacity: 0.8;">
             </a-video>
             <a-camera gps-camera rotation-reader></a-camera>
         </a-scene>
     </div>
 
     <script>
-        let isGPSSet = false;
+        let isNearTarget = false;
+        let videoLoaded = false;
+        let isVideoPlaying = false;
+
+        // 設定目標 GPS 點（允許誤差 ±10 公尺）
+        const targetLat = 24.9561088;
+        const targetLng = 121.2416;
+        const allowedError = 0.00009; // 約 10m 誤差範圍 
+
+        function updateGPSLocation(lat, lng) {
+            console.log(`📍 目前 GPS 位置: ${lat}, ${lng}`);
+
+            // 計算與目標地點的距離
+            if (Math.abs(lat - targetLat) < allowedError && Math.abs(lng - targetLng) < allowedError) {
+                if (!isNearTarget) {
+                    isNearTarget = true;
+                    document.getElementById("gps-guide").style.display = "none";
+                    document.getElementById("play-button").style.display = "block";
+                    document.getElementById("black-screen").style.display = "none"; // **移除黑色畫面**
+                    document.getElementById("ar-container").style.display = "block"; // **顯示 WebAR**
+
+                    console.log("🎯 到達目標地點，可以播放影片！");
+                }
+            } else {
+                isNearTarget = false;
+                document.getElementById("gps-guide").style.display = "block";
+                document.getElementById("play-button").style.display = "none";
+            }
+        }
 
         function enableGPS() {
             if ("geolocation" in navigator) {
-                document.getElementById("gps-guide").style.display = "block"; // 顯示 GPS 提示
+                document.getElementById("black-screen").style.display = "block";
+                document.getElementById("gps-guide").style.display = "block";
 
-                navigator.geolocation.getCurrentPosition(
+                navigator.geolocation.watchPosition(
                     function (position) {
-                        if (!isGPSSet) {
-                            let userLat = position.coords.latitude;
-                            let userLng = position.coords.longitude;
-
-                            console.log("📍 GPS 讀取成功:", userLat, userLng);
-
-                            let arVideo = document.getElementById("ar-video");
-
-                            // **確保 GPS 設定正確**
-                            setTimeout(() => {
-                                arVideo.setAttribute(
-                                    "gps-entity-place",
-                                    `latitude: ${userLat}; longitude: ${userLng}`
-                                );
-                                arVideo.setAttribute("visible", "true"); // 顯示影片
-                                console.log("🎥 影片應該已顯示");
-
-                                // 移除 GPS 提示
-                                document.getElementById("gps-guide").style.display = "none";
-                                
-                                // 顯示播放按鈕
-                                document.getElementById("play-button").style.display = "block";
-
-                            }, 3000); // 延遲 3 秒，確保 GPS 位置穩定
-
-                            // 移除黑色遮罩
-                            document.getElementById("black-screen").style.display = "none";
-                            document.getElementById("ar-container").style.display = "block";
-
-                            isGPSSet = true;  // 確保不會重複設定 GPS
-                        }
+                        let userLat = position.coords.latitude;
+                        let userLng = position.coords.longitude;
+                        updateGPSLocation(userLat, userLng);
                     },
                     function (error) {
                         console.error("⚠️ GPS 無法啟用", error);
@@ -144,26 +147,43 @@
 
         document.getElementById("play-button").addEventListener("click", function() {
             let video = document.getElementById("ar-video");
-            video.muted = false;  // 解除靜音
-            video.setAttribute("visible", "true"); // 確保影片顯示
+            document.getElementById("gps-guide").style.display = "none"
 
-            setTimeout(() => {
-                let playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        console.log("🎥 影片播放成功");
-                    }).catch(error => {
-                        console.log("❌ 影片無法播放:", error);
-                    });
-                } else {
-                    console.log("⚠️ `video.play()` 方法不存在，影片可能未載入");
-                }
-            }, 500);
+            if (!videoLoaded) {
+                console.log("⚠️ 影片尚未完全載入，請稍等...");
+                return;
+            }
 
-            this.style.display = "none"; // 隱藏按鈕
+            if (!isVideoPlaying) {
+                video.muted = false;
+                video.setAttribute("visible", "true");
+
+                setTimeout(() => {
+                    let playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log("🎥 影片播放成功");
+                            isVideoPlaying = true;
+                            document.getElementById("play-button").innerText = "暫停影片";
+                        }).catch(error => {
+                            console.log("❌ 影片無法播放:", error);
+                        });
+                    } else {
+                        console.log("⚠️ `video.play()` 方法不存在，影片可能未載入");
+                    }
+                }, 500);
+            } else {
+                video.pause();
+                isVideoPlaying = false;
+                document.getElementById("play-button").innerText = "播放影片";
+            }
         });
 
-        // 啟動 GPS 定位
+        document.getElementById("ar-video").onloadeddata = function() {
+            videoLoaded = true;
+            console.log("✅ 影片已載入，可以播放");
+        };
+
         window.onload = function () {
             enableGPS();
         };
