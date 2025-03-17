@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>WebAR 建築物前播放影片</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js/aframe/build/aframe-ar.min.js"></script>
     <style>
@@ -28,7 +29,6 @@
         <a-video
             id="ar-video"
             src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
-            position="0 1 -2"
             width="3"
             height="1.5"
             autoplay
@@ -38,7 +38,7 @@
     </a-scene>
 
     <script>
-        let isGPSSet = false; // 確保 GPS 位置只設定一次
+        let isGPSSet = false; // 確保 GPS 只設定一次
 
         // **1️⃣ 監聽點擊事件，啟動 WebAR**
         document.getElementById("start-button").addEventListener("click", function () {
@@ -46,7 +46,7 @@
             document.getElementById("start-button").style.display = "none"; // 隱藏按鈕
         });
 
-        // **2️⃣ 自動檢查相機權限**
+        // **2️⃣ 檢查相機權限**
         async function checkCameraPermission() {
             try {
                 const permissionStatus = await navigator.permissions.query({ name: "camera" });
