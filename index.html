@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebAR 建築物前播放影片（支援 iPhone）</title>
+    <title>WebAR 建築物前播放影片（GPS 確定後才開啟）</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@1.7.2/aframe/build/aframe-ar.min.js"></script>
     <style>
-        #loading-screen {
+        #black-screen {
             position: fixed;
             width: 100%;
             height: 100%;
@@ -17,7 +17,7 @@
             justify-content: center;
             z-index: 1000;
         }
-        #start-button, #play-button {
+        #play-button {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -36,13 +36,10 @@
 </head>
 <body style="margin: 0; overflow: hidden;">
 
-    <!-- 點擊開始畫面 -->
-    <div id="loading-screen">
-        <div id="loading-text">點擊開始</div>
-    </div>
+    <!-- 黑色遮罩，直到 GPS 定位成功 -->
+    <div id="black-screen">正在定位中...</div>
 
-    <button id="start-button">點擊啟動 WebAR</button>
-    <button id="play-button" style="display:none;">點擊播放影片</button>
+    <button id="play-button">點擊播放影片</button>
 
     <!-- WebAR 場景 -->
     <a-scene embedded arjs="sourceType: webcam; videoTexture: true; trackingMethod: best; debugUIEnabled: false;">
@@ -50,41 +47,20 @@
             id="ar-video"
             src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
             position="0 2 -3"
-            width="3"
-            height="1.5"
+            width="6"
+            height="3.5"
             autoplay
             loop
             playsinline
             muted
-            preload="auto">
+            preload="auto"
+            visible="false">
         </a-video>
         <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
 
     <script>
         let isGPSSet = false;
-
-        // 點擊「開始」後，延遲 5 秒才啟動 WebAR
-        document.getElementById("loading-screen").addEventListener("click", function () {
-            document.getElementById("loading-text").innerText = "載入中...";
-            setTimeout(function () {
-                document.getElementById("loading-screen").style.display = "none";
-                document.getElementById("start-button").style.display = "block"; // 顯示 WebAR 啟動按鈕
-            }, 5000);
-        });
-
-        document.getElementById("start-button").addEventListener("click", function () {
-            enableGPS();
-            document.getElementById("start-button").style.display = "none";
-            document.getElementById("play-button").style.display = "block"; // 顯示播放按鈕
-        });
-
-        document.getElementById("play-button").addEventListener("click", function() {
-            let video = document.getElementById("ar-video");
-            video.muted = false;  // 解除靜音
-            video.play();
-            this.style.display = "none"; // 隱藏按鈕
-        });
 
         function enableGPS() {
             if ("geolocation" in navigator) {
@@ -102,7 +78,14 @@
                                 `latitude: ${userLat}; longitude: ${userLng}`
                             );
 
-                            isGPSSet = true;
+                            // 移除黑色遮罩
+                            document.getElementById("black-screen").style.display = "none";
+                            // 顯示影片
+                            arVideo.setAttribute("visible", "true");
+                            // 顯示播放按鈕
+                            document.getElementById("play-button").style.display = "block";
+
+                            isGPSSet = true;  // 確保不會重複設定 GPS
                         }
                     },
                     function (error) {
@@ -115,6 +98,18 @@
                 alert("您的裝置不支援 GPS");
             }
         }
+
+        document.getElementById("play-button").addEventListener("click", function() {
+            let video = document.getElementById("ar-video");
+            video.muted = false;  // 解除靜音
+            video.play();
+            this.style.display = "none"; // 隱藏按鈕
+        });
+
+        // 啟動 GPS 定位
+        window.onload = function () {
+            enableGPS();
+        };
     </script>
 </body>
 </html>
