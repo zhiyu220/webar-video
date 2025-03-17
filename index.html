@@ -1,114 +1,120 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>WebAR 建築物前播放影片</title>
+<head>
+    <title>WebAR 建築物前播放影片（支援 iPhone）</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@1.7.2/aframe/build/aframe-ar.min.js"></script>
     <style>
-      #start-button,
-      #play-button {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        padding: 15px 30px;
-        font-size: 18px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        z-index: 1000;
-      }
+        #loading-screen {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: black;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        #start-button, #play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+            display: none;
+        }
     </style>
-  </head>
-  <body style="margin: 0; overflow: hidden">
-    <button id="start-button">點擊啟動 WebAR</button>
-    <button id="play-button">點擊播放影片</button>
-    <!-- WebAR 場景 -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-      <a-video
-        id="ar-video"
-        src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
-        position="0 2 -5"
-        width="3"
-        height="1.5"
-        autoplay
-        loop
-        playsinline
-        muted
-        preload="auto"
-      >
-      </a-video>
+</head>
+<body style="margin: 0; overflow: hidden;">
 
-      <a-camera gps-camera rotation-reader></a-camera>
+    <!-- 點擊開始畫面 -->
+    <div id="loading-screen">
+        <div id="loading-text">點擊開始</div>
+    </div>
+
+    <button id="start-button">點擊啟動 WebAR</button>
+    <button id="play-button" style="display:none;">點擊播放影片</button>
+
+    <!-- WebAR 場景 -->
+    <a-scene embedded arjs="sourceType: webcam; videoTexture: true; trackingMethod: best; debugUIEnabled: false;">
+        <a-video
+            id="ar-video"
+            src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
+            position="0 2 -3"
+            width="3"
+            height="1.5"
+            autoplay
+            loop
+            playsinline
+            muted
+            preload="auto">
+        </a-video>
+        <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
 
     <script>
-      let isGPSSet = false;
+        let isGPSSet = false;
 
-      document
-        .getElementById("start-button")
-        .addEventListener("click", function () {
-          enableGPS();
-          document.getElementById("start-button").style.display = "none";
-          document.getElementById("play-button").style.display = "block"; // 顯示播放按鈕
+        // 點擊「開始」後，延遲 5 秒才啟動 WebAR
+        document.getElementById("loading-screen").addEventListener("click", function () {
+            document.getElementById("loading-text").innerText = "載入中...";
+            setTimeout(function () {
+                document.getElementById("loading-screen").style.display = "none";
+                document.getElementById("start-button").style.display = "block"; // 顯示 WebAR 啟動按鈕
+            }, 5000);
         });
 
-      document
-        .getElementById("play-button")
-        .addEventListener("click", function () {
-          let video = document.getElementById("ar-video");
-          video.muted = false; // 解除靜音
-          video.play();
-          this.style.display = "none"; // 隱藏按鈕
+        document.getElementById("start-button").addEventListener("click", function () {
+            enableGPS();
+            document.getElementById("start-button").style.display = "none";
+            document.getElementById("play-button").style.display = "block"; // 顯示播放按鈕
         });
 
-      function enableGPS() {
-        if ("geolocation" in navigator) {
-          navigator.geolocation.getCurrentPosition(
-            function (position) {
-              if (!isGPSSet) {
-                let userLat = position.coords.latitude;
-                let userLng = position.coords.longitude;
+        document.getElementById("play-button").addEventListener("click", function() {
+            let video = document.getElementById("ar-video");
+            video.muted = false;  // 解除靜音
+            video.play();
+            this.style.display = "none"; // 隱藏按鈕
+        });
 
-                console.log("📍 GPS 讀取成功:", userLat, userLng);
+        function enableGPS() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        if (!isGPSSet) {
+                            let userLat = position.coords.latitude;
+                            let userLng = position.coords.longitude;
 
-                let arVideo = document.getElementById("ar-video");
-                arVideo.setAttribute(
-                  "gps-entity-place",
-                  `latitude: ${userLat}; longitude: ${userLng}`
+                            console.log("📍 GPS 讀取成功:", userLat, userLng);
+
+                            let arVideo = document.getElementById("ar-video");
+                            arVideo.setAttribute(
+                                "gps-entity-place",
+                                `latitude: ${userLat}; longitude: ${userLng}`
+                            );
+
+                            isGPSSet = true;
+                        }
+                    },
+                    function (error) {
+                        console.error("⚠️ GPS 無法啟用", error);
+                        alert("請允許 GPS 存取以顯示 WebAR 影片！");
+                    },
+                    { enableHighAccuracy: false, maximumAge: 60000, timeout: 10000 }
                 );
-
-                isGPSSet = true;
-              }
-            },
-            function (error) {
-              console.error("⚠️ GPS 無法啟用", error);
-              alert("請允許 GPS 存取以顯示 WebAR 影片！");
-            },
-            { enableHighAccuracy: true, maximumAge: 30000, timeout: 5000 }
-          );
-        } else {
-          alert("您的裝置不支援 GPS");
+            } else {
+                alert("您的裝置不支援 GPS");
+            }
         }
-      }
-
-      function checkAR() {
-        let arVideo = document.getElementById("ar-video");
-        if (arVideo) {
-          console.log("✅ WebAR 影片已載入");
-        } else {
-          console.error("❌ WebAR 影片未顯示");
-        }
-      }
-
-      window.onload = function () {
-        checkAR();
-        setTimeout(() => {
-          enableGPS();
-        }, 3000);
-      };
     </script>
-  </body>
+</body>
 </html>
