@@ -6,15 +6,26 @@
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js/aframe/build/aframe-ar.min.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA8tIJYmXx7fxn6ulAg-SMMC86oGgvSHFg"></script>
-
     <style>
-      #map {
-        height: 400px;
-        width: 100%;
+      #start-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 15px 30px;
+        font-size: 18px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1000;
       }
     </style>
   </head>
   <body style="margin: 0; overflow: hidden">
+    <button id="start-button">點擊啟動 WebAR</button>
+
     <!-- WebAR 場景 -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
       <a-video
@@ -33,13 +44,12 @@
     <script>
       let isGPSSet = false;
 
-      document.body.addEventListener(
-        "click",
-        function () {
+      document
+        .getElementById("start-button")
+        .addEventListener("click", function () {
           enableGPS();
-        },
-        { once: true }
-      ); // 只允許點擊一次
+          document.getElementById("start-button").style.display = "none"; // 隱藏按鈕
+        });
 
       async function checkCameraPermission() {
         try {
@@ -129,7 +139,10 @@
           alert("您的裝置不支援 GPS");
         }
       }
-      setTimeout(enableGPS, 5000); // 延遲 5 秒確保 GPS 校正
+
+      setInterval(() => {
+        isGPSSet = false; // 讓 GPS 位置可以每 30 秒更新一次
+      }, 10000);
 
       // **確保 WebAR 正確顯示**
       function checkAR() {
