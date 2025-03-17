@@ -19,19 +19,56 @@
 
     <!-- WebAR 場景 -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-        <a-video 
-            id="ar-video"
-            src="https://peppy-marshmallow-c47b19.netlify.app/0317.mp4"
-            position="0 1 -2"
-            width="3"
-            height="1.5"
-            autoplay
-            loop>
-        </a-video>
-        <a-camera gps-camera rotation-reader></a-camera>
+      <a-video
+        id="ar-video"
+        src="https://peppy-marshmallow-c47b19.netlify.app/0317.mp4"
+        position="0 1 -2"
+        width="3"
+        height="1.5"
+        autoplay
+        loop
+      >
+      </a-video>
+      <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
 
     <script>
+      async function checkCameraPermission() {
+        try {
+          const permissionStatus = await navigator.permissions.query({
+            name: "camera",
+          });
+
+          if (permissionStatus.state === "granted") {
+            console.log("✅ 相機權限已允許");
+          } else if (permissionStatus.state === "denied") {
+            alert(
+              "❌ 相機權限被拒絕！\n請手動開啟：\nChrome: 設定 → 網站設定 → 相機\nSafari: 設定 → Safari → 相機權限"
+            );
+          } else {
+            requestCameraAccess(); // 重新請求相機存取權限
+          }
+        } catch (error) {
+          console.error("無法檢查權限", error);
+          requestCameraAccess();
+        }
+      }
+
+      function requestCameraAccess() {
+        navigator.mediaDevices
+          .getUserMedia({ video: true })
+          .then(function (stream) {
+            console.log("✅ 相機權限已允許");
+          })
+          .catch(function (err) {
+            console.error("❌ 相機存取被拒絕", err);
+            alert("請允許相機存取，以顯示 WebAR！");
+          });
+      }
+
+      window.onload = function () {
+        checkCameraPermission();
+      };
       function initMap() {
         var location = { lat: 24.969812026015507, lng: 121.26015417116461 };
         var map = new google.maps.Map(document.getElementById("map"), {
