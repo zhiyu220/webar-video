@@ -1,192 +1,140 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>WebAR 解謎遊戲（GPS 到達後可播放）</title>
+  <head>
+    <title>WebAR 建築物前播放影片（支援 iPhone）</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@1.7.2/aframe/build/aframe-ar.min.js"></script>
-
-    <link rel="icon" href="data:,"> <!-- 避免 favicon.ico 錯誤 -->
-
     <style>
-        /* 黑色啟動畫面 */
-        #black-screen {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            background: black;
-            color: white;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        /* GPS 位置提示 */
-        #gps-guide {
-            position: fixed;
-            width: 100%;
-            text-align: center;
-            top: 20%;
-            font-size: 18px;
-            color: white;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            display: none;
-            z-index: 999;
-        }
-
-        /* 播放影片按鈕 */
-        #play-button {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 1000;
-            display: none;
-        }
-
-        /* 隱藏 WebAR 場景直到 GPS 定位成功 */
-        #ar-container {
-            display: none;
-        }
+      #black-screen {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        background: black;
+        color: white;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      #play-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 15px 30px;
+        font-size: 18px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1000;
+        display: none;
+      }
     </style>
-</head>
-<body style="margin: 0; overflow: hidden;">
+  </head>
+  <body style="margin: 0; overflow: hidden">
+    <!-- 黑色遮罩，直到 GPS 定位成功 -->
+    <div id="black-screen">正在定位中...</div>
 
-    <!-- 黑色啟動畫面 -->
-    <div id="black-screen">正在啟動 WebAR...</div>
+    <button id="play-button">點擊播放影片</button>
 
-    <!-- GPS 位置引導 -->
-    <div id="gps-guide">請移動手機，前往指定地點...</div>
-
-    <!-- 播放影片按鈕 -->
-    <button id="play-button">播放影片</button>
-
-    <!-- WebAR 容器 -->
-    <div id="ar-container">
-        <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-            <a-video
-                id="ar-video"
-                src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
-                gps-entity-place="latitude: 24.969843; longitude: 121.260031"
-                position="0 2 -5"
-                width="4"
-                height="2.25"
-                playsinline
-                muted
-                preload="auto"
-                crossOrigin="anonymous"
-                visible="false"
-                look-at="[gps-camera]"
-                material="opacity: 0.8;">
-            </a-video>
-            <a-camera gps-camera rotation-reader></a-camera>
-        </a-scene>
-    </div>
+    <!-- WebAR 場景 -->
+    <a-scene
+      embedded
+      arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false;"
+    >
+      <a-video
+        id="ar-video"
+        src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
+        position="0 2 -3"
+        width="6"
+        height="3.5"
+        autoplay
+        loop
+        playsinline
+        muted
+        preload="auto"
+        visible="false"
+      >
+      </a-video>
+      <a-camera gps-camera rotation-reader></a-camera>
+    </a-scene>
 
     <script>
-        let isNearTarget = false;
-        let videoLoaded = false;
-        let isVideoPlaying = false;
+      let isGPSSet = false;
 
-        // 設定目標 GPS 點（允許誤差 ±30 公尺）
-        const targetLat = 24.9561088;
-        const targetLng = 121.2416;
-        const allowedError = 0.0005; 
+      function enableGPS() {
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            function (position) {
+              if (!isGPSSet) {
+                let userLat = position.coords.latitude;
+                let userLng = position.coords.longitude;
 
-        function updateGPSLocation(lat, lng) {
-            console.log(`📍 目前 GPS 位置: ${lat}, ${lng}`);
+                console.log("📍 GPS 讀取成功:", userLat, userLng);
 
-            // 計算與目標地點的距離
-            if (Math.abs(lat - targetLat) < allowedError && Math.abs(lng - targetLng) < allowedError) {
-                if (!isNearTarget) {
-                    isNearTarget = true;
-                    document.getElementById("gps-guide").style.display = "none";
-                    document.getElementById("play-button").style.display = "block";
-                    document.getElementById("black-screen").style.display = "none"; // **移除黑色畫面**
-                    document.getElementById("ar-container").style.display = "block"; // **顯示 WebAR**
-
-                    console.log("🎯 到達目標地點，可以播放影片！");
-                }
-            } else {
-                isNearTarget = false;
-                document.getElementById("gps-guide").style.display = "block";
-                document.getElementById("play-button").style.display = "none";
-            }
-        }
-
-        function enableGPS() {
-            if ("geolocation" in navigator) {
-                document.getElementById("black-screen").style.display = "block";
-                document.getElementById("gps-guide").style.display = "block";
-
-                navigator.geolocation.watchPosition(
-                    function (position) {
-                        let userLat = position.coords.latitude;
-                        let userLng = position.coords.longitude;
-                        updateGPSLocation(userLat, userLng);
-                    },
-                    function (error) {
-                        console.error("⚠️ GPS 無法啟用", error);
-                        alert("請允許 GPS 存取以顯示 WebAR 影片！");
-                    },
-                    { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
+                let arVideo = document.getElementById("ar-video");
+                arVideo.setAttribute(
+                  "gps-entity-place",
+                  `latitude: ${userLat}; longitude: ${userLng}`
                 );
-            } else {
-                alert("您的裝置不支援 GPS");
-            }
-        }
 
-        document.getElementById("play-button").addEventListener("click", function() {
-            let video = document.getElementById("ar-video");
-            document.getElementById("gps-guide").style.display = "none"
+                // 移除黑色遮罩
+                document.getElementById("black-screen").style.display = "none";
+                // 顯示影片
+                arVideo.setAttribute("visible", "true");
+                // 顯示播放按鈕
+                document.getElementById("play-button").style.display = "block";
 
-            if (!videoLoaded) {
-                console.log("⚠️ 影片尚未完全載入，請稍等...");
-                return;
-            }
-
-            if (!isVideoPlaying) {
-                video.muted = false;
-                video.setAttribute("visible", "true");
-
+                // 修正 iPhone Safari 無法播放影片
                 setTimeout(() => {
-                    let playPromise = video.play();
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            console.log("🎥 影片播放成功");
-                            isVideoPlaying = true;
-                            document.getElementById("play-button").innerText = "暫停影片";
-                        }).catch(error => {
-                            console.log("❌ 影片無法播放:", error);
-                        });
-                    } else {
-                        console.log("⚠️ `video.play()` 方法不存在，影片可能未載入");
-                    }
-                }, 500);
-            } else {
-                video.pause();
-                isVideoPlaying = false;
-                document.getElementById("play-button").innerText = "播放影片";
-            }
+                  arVideo.components.material.material.needsUpdate = true;
+                }, 2000);
+
+                isGPSSet = true; // 確保不會重複設定 GPS
+              }
+            },
+            function (error) {
+              console.error("⚠️ GPS 無法啟用", error);
+              alert("請允許 GPS 存取以顯示 WebAR 影片！");
+            },
+            { enableHighAccuracy: false, maximumAge: 60000, timeout: 10000 }
+          );
+        } else {
+          alert("您的裝置不支援 GPS");
+        }
+      }
+
+      document
+        .getElementById("play-button")
+        .addEventListener("click", function () {
+          let video = document.getElementById("ar-video");
+          video.muted = false; // 解除靜音
+
+          // 確保 video.play() 不會報錯
+          let playPromise = video.play();
+
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => console.log("🎬 影片播放成功"))
+              .catch((error) => console.log("❌ 影片無法播放:", error));
+          }
+
+          this.style.display = "none"; // 隱藏按鈕
         });
 
-        document.getElementById("ar-video").onloadeddata = function() {
-            videoLoaded = true;
-            console.log("✅ 影片已載入，可以播放");
-        };
+      // 啟動 GPS 定位
+      window.onload = function () {
+        enableGPS();
+      };
 
-        window.onload = function () {
-            enableGPS();
-        };
+      setTimeout(() => {
+        document.getElementById(
+          "ar-video"
+        ).components.material.material.needsUpdate = true;
+      }, 2000);
     </script>
-</body>
+  </body>
 </html>
