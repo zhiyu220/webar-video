@@ -97,10 +97,10 @@
         let videoLoaded = false;
         let isVideoPlaying = false;
 
-        // 設定目標 GPS 點（允許誤差 ±10 公尺）
+        // 設定目標 GPS 點（允許誤差 ±30 公尺）
         const targetLat = 24.9561088;
         const targetLng = 121.2416;
-        const allowedError = 0.00009; // 約 10m 誤差範圍 
+        const allowedError = 0.0005; 
 
         function updateGPSLocation(lat, lng) {
             console.log(`📍 目前 GPS 位置: ${lat}, ${lng}`);
