@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Maps + WebAR 影片</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://rawgit.com/nicolocarpignoli/AR.js/master/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA8tIJYmXx7fxn6ulAg-SMMC86oGgvSHFg"></script>
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body style="margin: 0; overflow: hidden;">
+    <!-- 顯示 Google 地圖 -->
+    <div id="map"></div>
+
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+        <!-- 在特定建築物前顯示 AR 影片 -->
+        <a-video 
+            src="https://your-video-url.mp4"
+            gps-entity-place="latitude: 24.965375; longitude: 121.267522"
+            look-at="[gps-camera]"
+            position="0 1.5 0"
+            width="3"
+            height="1.5"
+            autoplay
+            loop>
+        </a-video>
+
+        <!-- GPS 相機 -->
+        <a-camera gps-camera rotation-reader></a-camera>
+    </a-scene>
+
+    <script>
+        function initMap() {
+            var location = {lat: 24.965375, lng: 121.267522}; // 這裡換成你的建築物座標
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 18,
+                center: location
+            });
+            var marker = new google.maps.Marker({
+                position: location,
+                map: map
+            });
+        }
+        window.onload = initMap;
+    </script>
+</body>
+</html>
