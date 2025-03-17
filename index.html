@@ -3,9 +3,9 @@
 <head>
     <title>WebAR 建築物前播放影片</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@1.7.2/aframe/build/aframe-ar.min.js"></script>
     <style>
-        #start-button {
+        #start-button, #play-button {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -23,59 +23,39 @@
 </head>
 <body style="margin: 0; overflow: hidden;">
     <button id="start-button">點擊啟動 WebAR</button>
+    <button id="play-button" style="display:none;">點擊播放影片</button>
 
     <!-- WebAR 場景 -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
         <a-video
             id="ar-video"
             src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
+            position="0 2 -5"
             width="3"
             height="1.5"
             autoplay
-            loop>
+            loop
+            playsinline
+            muted>
         </a-video>
         <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
 
     <script>
-        let isGPSSet = false; // 確保 GPS 只設定一次
+        let isGPSSet = false;
 
-        // **1️⃣ 監聽點擊事件，啟動 WebAR**
         document.getElementById("start-button").addEventListener("click", function () {
             enableGPS();
-            document.getElementById("start-button").style.display = "none"; // 隱藏按鈕
+            document.getElementById("start-button").style.display = "none";
+            document.getElementById("play-button").style.display = "block"; // 顯示播放按鈕
         });
 
-        // **2️⃣ 檢查相機權限**
-        async function checkCameraPermission() {
-            try {
-                const permissionStatus = await navigator.permissions.query({ name: "camera" });
+        document.getElementById("play-button").addEventListener("click", function() {
+            let video = document.getElementById("ar-video");
+            video.play();
+            this.style.display = "none"; // 隱藏播放按鈕
+        });
 
-                if (permissionStatus.state === "granted") {
-                    console.log("✅ 相機權限已允許");
-                } else if (permissionStatus.state === "denied") {
-                    alert("❌ 相機權限被拒絕！請手動開啟相機權限。");
-                } else {
-                    requestCameraAccess();
-                }
-            } catch (error) {
-                console.error("無法檢查相機權限", error);
-                requestCameraAccess();
-            }
-        }
-
-        function requestCameraAccess() {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function (stream) {
-                    console.log("✅ 相機權限已允許");
-                })
-                .catch(function (err) {
-                    console.error("❌ 相機存取被拒絕", err);
-                    alert("請允許相機存取，以顯示 WebAR！");
-                });
-        }
-
-        // **3️⃣ 啟動 GPS**
         function enableGPS() {
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(
@@ -86,41 +66,26 @@
 
                             console.log("📍 GPS 讀取成功:", userLat, userLng);
 
-                            // **允許 GPS 位置有 ±10~20m 誤差**
-                            let latOffset = Math.random() * 0.0002 - 0.0001;
-                            let lngOffset = Math.random() * 0.0002 - 0.0001;
-
-                            let adjustedLat = userLat + latOffset;
-                            let adjustedLng = userLng + lngOffset;
-
-                            console.log("📍 調整後的 GPS:", adjustedLat, adjustedLng);
-
                             let arVideo = document.getElementById("ar-video");
                             arVideo.setAttribute(
                                 "gps-entity-place",
-                                `latitude: ${adjustedLat}; longitude: ${adjustedLng}`
+                                `latitude: ${userLat}; longitude: ${userLng}`
                             );
 
-                            isGPSSet = true; // **防止 GPS 位置一直變動**
+                            isGPSSet = true;
                         }
                     },
                     function (error) {
                         console.error("⚠️ GPS 無法啟用", error);
                         alert("請允許 GPS 存取以顯示 WebAR 影片！");
                     },
-                    { enableHighAccuracy: true, maximumAge: 30000, timeout: 5000 } // **設定 GPS 參數**
+                    { enableHighAccuracy: true, maximumAge: 30000, timeout: 5000 }
                 );
             } else {
                 alert("您的裝置不支援 GPS");
             }
         }
 
-        // **4️⃣ 每 30 秒允許 GPS 位置更新一次**
-        setInterval(() => {
-            isGPSSet = false; // **允許 GPS 重新更新**
-        }, 30000);
-
-        // **5️⃣ 確保 WebAR 影片載入**
         function checkAR() {
             let arVideo = document.getElementById("ar-video");
             if (arVideo) {
@@ -130,12 +95,10 @@
             }
         }
 
-        // **6️⃣ 在頁面載入時檢查相機權限**
         window.onload = function () {
-            checkCameraPermission();
+            checkAR();
             setTimeout(() => {
                 enableGPS();
-                checkAR();
             }, 3000);
         };
     </script>
