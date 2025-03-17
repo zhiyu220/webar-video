@@ -55,14 +55,14 @@
             <a-video
                 id="ar-video"
                 src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
-                position="0 2 -3"
+                gps-entity-place
                 width="6"
                 height="3.5"
-                autoplay
                 loop
                 playsinline
                 muted
-                preload="auto">
+                preload="auto"
+                visible="false">
             </a-video>
             <a-camera gps-camera rotation-reader></a-camera>
         </a-scene>
@@ -96,9 +96,9 @@
                             // 顯示播放按鈕
                             document.getElementById("play-button").style.display = "block";
 
-                            // 修正 iPhone Safari 無法播放影片
+                            // 修正影片消失問題：延遲2秒讓 GPS 位置穩定
                             setTimeout(() => {
-                                arVideo.components.material.material.needsUpdate = true;
+                                arVideo.setAttribute("visible", "true");
                             }, 2000);
 
                             isGPSSet = true;  // 確保不會重複設定 GPS
@@ -108,7 +108,7 @@
                         console.error("⚠️ GPS 無法啟用", error);
                         alert("請允許 GPS 存取以顯示 WebAR 影片！");
                     },
-                    { enableHighAccuracy: false, maximumAge: 60000, timeout: 10000 }
+                    { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 }
                 );
             } else {
                 alert("您的裝置不支援 GPS");
