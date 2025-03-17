@@ -4,6 +4,7 @@
     <title>WebAR 建築物前播放影片（GPS 確定後才開啟）</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@1.7.2/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://rawgit.com/nicolocarpignoli/AR.js/master/aframe/build/aframe-gps-camera.min.js"></script>
     <style>
         /* 黑色遮罩，直到 GPS 定位成功 */
         #black-screen {
@@ -56,6 +57,7 @@
                 id="ar-video"
                 src="https://stupendous-fudge-84cc56.netlify.app/0317.mp4"
                 gps-entity-place
+                position="0 3 -5"
                 width="6"
                 height="3.5"
                 loop
@@ -82,10 +84,16 @@
                             console.log("📍 GPS 讀取成功:", userLat, userLng);
 
                             let arVideo = document.getElementById("ar-video");
-                            arVideo.setAttribute(
-                                "gps-entity-place",
-                                `latitude: ${userLat}; longitude: ${userLng}`
-                            );
+                            
+                            // **確保 GPS 設定正確**
+                            setTimeout(() => {
+                                arVideo.setAttribute(
+                                    "gps-entity-place",
+                                    `latitude: ${userLat}; longitude: ${userLng}`
+                                );
+                                arVideo.setAttribute("visible", "true"); // 顯示影片
+                                console.log("🎥 影片應該已顯示");
+                            }, 2000); // 延遲 2 秒，確保 GPS 位置穩定
 
                             // 移除黑色遮罩
                             document.getElementById("black-screen").style.display = "none";
@@ -95,11 +103,6 @@
 
                             // 顯示播放按鈕
                             document.getElementById("play-button").style.display = "block";
-
-                            // 修正影片消失問題：延遲2秒讓 GPS 位置穩定
-                            setTimeout(() => {
-                                arVideo.setAttribute("visible", "true");
-                            }, 2000);
 
                             isGPSSet = true;  // 確保不會重複設定 GPS
                         }
@@ -118,11 +121,15 @@
         document.getElementById("play-button").addEventListener("click", function() {
             let video = document.getElementById("ar-video");
             video.muted = false;  // 解除靜音
-            video.play().catch(error => console.log("❌ 影片無法播放:", error));
-            this.style.display = "none"; // 隱藏按鈕
+            video.play().then(() => {
+                console.log("🎥 影片播放成功");
+            }).catch(error => {
+                console.log("❌ 影片無法播放:", error);
+            });
+            this.style.display = "none"; // **隱藏按鈕**
         });
 
-        // 啟動 GPS 定位
+        // **啟動 GPS 定位**
         window.onload = function () {
             enableGPS();
         };
