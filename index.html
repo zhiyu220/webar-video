@@ -125,16 +125,18 @@
           this.style.display = "none"; // 隱藏按鈕
         });
 
+      function reloadVideo() {
+        let video = document.getElementById("ar-video");
+        video.load(); // 重新加載影片
+        console.log("🔄 影片重新加載");
+      }
       // 啟動 GPS 定位
       window.onload = function () {
         enableGPS();
       };
 
-      setTimeout(() => {
-        document.getElementById(
-          "ar-video"
-        ).components.material.material.needsUpdate = true;
-      }, 2000);
+      setInterval(enableGPS, 15000); // 每 15 秒更新 GPS
+      setInterval(reloadVideo, 20000); // 每 20 秒重新載入影片
     </script>
   </body>
 </html>
