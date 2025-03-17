@@ -15,8 +15,6 @@
     </style>
   </head>
   <body style="margin: 0; overflow: hidden">
-    <!-- 顯示 Google 地圖 -->
-    <div id="map"></div>
 
     <!-- WebAR 場景 -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
@@ -41,10 +39,10 @@
           });
 
           if (permissionStatus.state === "granted") {
-            console.log("✅ 相機權限已允許");
+            console.log("✅相機權限已允許");
           } else if (permissionStatus.state === "denied") {
             alert(
-              "❌ 相機權限被拒絕！\n請手動開啟：\nChrome: 設定 → 網站設定 → 相機\nSafari: 設定 → Safari → 相機權限"
+              "❌相機權限被拒絕！\n請手動開啟：\nChrome: 設定 → 網站設定 → 相機\nSafari: 設定 → Safari → 相機權限"
             );
           } else {
             requestCameraAccess(); // 重新請求相機存取權限
