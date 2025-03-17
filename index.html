@@ -31,6 +31,8 @@
     </a-scene>
 
     <script>
+      let isGPSSet = false;
+
       document.body.addEventListener(
         "click",
         function () {
@@ -93,32 +95,35 @@
         if ("geolocation" in navigator) {
           navigator.geolocation.getCurrentPosition(
             function (position) {
-              let userLat = position.coords.latitude;
-              let userLng = position.coords.longitude;
+              if (!isGPSSet) {
+                let userLat = position.coords.latitude;
+                let userLng = position.coords.longitude;
 
-              console.log("GPS 啟動成功:", userLat, userLng);
+                console.log("GPS 讀取成功:", userLat, userLng);
 
-              // **加入 ±0.0001 到 ±0.0002 的誤差**
-              let latOffset = Math.random() * 0.0002 - 0.0001; // ±10~20m
-              let lngOffset = Math.random() * 0.0002 - 0.0001; // ±10~20m
+                // **允許 GPS 位置有 ±0.0001 ~ ±0.0002 的誤差（10~20m）**
+                let latOffset = Math.random() * 0.0002 - 0.0001;
+                let lngOffset = Math.random() * 0.0002 - 0.0001;
 
-              let adjustedLat = userLat + latOffset;
-              let adjustedLng = userLng + lngOffset;
+                let adjustedLat = userLat + latOffset;
+                let adjustedLng = userLng + lngOffset;
 
-              console.log("調整後的 GPS:", adjustedLat, adjustedLng);
+                console.log("調整後的 GPS:", adjustedLat, adjustedLng);
 
-              // **設定 GPS 位置**
-              let arVideo = document.getElementById("ar-video");
-              arVideo.setAttribute(
-                "gps-entity-place",
-                `latitude: ${adjustedLat}; longitude: ${adjustedLng}`
-              );
+                let arVideo = document.getElementById("ar-video");
+                arVideo.setAttribute(
+                  "gps-entity-place",
+                  `latitude: ${adjustedLat}; longitude: ${adjustedLng}`
+                );
+
+                isGPSSet = true; // **防止 GPS 位置一直變動**
+              }
             },
             function (error) {
               console.error("GPS 無法啟用", error);
-              alert("請允許 GPS 存取以顯示 AR 內容");
+              alert("請允許 GPS 存取以顯示 WebAR 影片！");
             },
-            { enableHighAccuracy: true } // **確保 GPS 讀取更精準**
+            { enableHighAccuracy: true, maximumAge: 30000, timeout: 5000 } // 設定 GPS 參數
           );
         } else {
           alert("您的裝置不支援 GPS");
